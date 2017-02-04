@@ -60,8 +60,79 @@ var clock = new THREE.Clock();
 // custom global variables
 var cube;
 
+let rickCookQuote = 'Programming today is a race between software engineers striving to build bigger and better idiot-proof programs, and the universe trying to build bigger and better idiots. So far, the universe is winning.';
+let linuxQuote = 'Talk is cheap. Show me the code.';
+
+let textArr = [];
+textArr = textArr.concat(rickCookQuote.split(' '));
+textArr = textArr.concat(linuxQuote.split(' '));
+
+let randomText = (function(){
+	// Font with textures applied:
+	var chromeTexture = THREE.ImageUtils.loadTexture( 'images/Chrome.png' );
+	chromeTexture.wrapS = chromeTexture.wrapT = THREE.RepeatWrapping;
+	chromeTexture.repeat.set( 0.5, 0.5 );
+	var chromeMaterial = new THREE.MeshBasicMaterial( { map: chromeTexture } );
+	
+	var lavaTexture = THREE.ImageUtils.loadTexture( 'images/lava.jpg' );
+	lavaTexture.wrapS = lavaTexture.wrapT = THREE.RepeatWrapping;
+	lavaTexture.repeat.set( 0.05, 0.05 );
+	var lavaMaterial = new THREE.MeshBasicMaterial( { map: lavaTexture } );
+	
+	var materialArray = [ lavaMaterial, chromeMaterial ];
+
+	
+
+	const x = {max: 200, min: -200};
+	const y = {max: 150, min: 0};
+	const z = {max: 150, min: -20};
+
+	return {
+		create: function(){
+			var textGeom = new THREE.TextGeometry( textArr[Math.floor(Math.random() * textArr.length)], 
+			{
+				size: 14, height: 4, curveSegments: 3,
+				font: "helvetiker", weight: "bold", style: "normal",
+				bevelThickness: 2, bevelSize: 1, bevelEnabled: true,
+				material: 0, extrudeMaterial: 1
+			});
+			// font: helvetiker, gentilis, droid sans, droid serif, optimer
+			// weight: normal, bold
+			
+			var textMaterial = new THREE.MeshFaceMaterial(materialArray);
+			var textMesh = new THREE.Mesh(textGeom, textMaterial );
+			
+			// textGeom.computeBoundingBox();
+			// var textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
+			
+			let randomVal = Math.random();
+			
+			let random = function(p){
+				return Math.floor(randomVal * (p.max - p.min) + p.min);
+			}
+
+			textMesh.position.set( random(x), random(y), random(z) );
+			
+			let autoFallDown = setInterval(function(){
+				textMesh.position.y += -5;
+
+				if(textMesh.position.y < 0){
+					clearInterval(autoFallDown);
+					scene.remove(textMesh);
+				}
+			}, 500);
+
+			// textMesh.rotation.x = -Math.PI / 4;
+			// textMesh.rotation.x = -Math.PI / 8;
+			// textMesh.rotation.x = 0;
+			scene.add(textMesh);
+		}
+	}
+})();
+
 init();
 animate();
+
 
 // FUNCTIONS 		
 function init() 
@@ -70,10 +141,12 @@ function init()
 	scene = new THREE.Scene();
 	// CAMERA
 	var SCREEN_WIDTH = window.innerWidth, SCREEN_HEIGHT = window.innerHeight;
-	var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	// var VIEW_ANGLE = 45, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	// var VIEW_ANGLE = 80, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
+	var VIEW_ANGLE = 80, ASPECT = SCREEN_WIDTH / SCREEN_HEIGHT, NEAR = 0.1, FAR = 20000;
 	camera = new THREE.PerspectiveCamera( VIEW_ANGLE, ASPECT, NEAR, FAR);
 	scene.add(camera);
-	camera.position.set(0,150,400);
+	camera.position.set(-120,50,500);
 	camera.lookAt(scene.position);	
 	// RENDERER
 	if ( Detector.webgl )
@@ -119,37 +192,7 @@ function init()
 	// CUSTOM //
 	////////////
 
-	// Font with textures applied:
-	var chromeTexture = THREE.ImageUtils.loadTexture( 'images/Chrome.png' );
-	chromeTexture.wrapS = chromeTexture.wrapT = THREE.RepeatWrapping;
-	chromeTexture.repeat.set( 0.5, 0.5 );
-	var chromeMaterial = new THREE.MeshBasicMaterial( { map: chromeTexture } );
 	
-	var lavaTexture = THREE.ImageUtils.loadTexture( 'images/lava.jpg' );
-	lavaTexture.wrapS = lavaTexture.wrapT = THREE.RepeatWrapping;
-	lavaTexture.repeat.set( 0.05, 0.05 );
-	var lavaMaterial = new THREE.MeshBasicMaterial( { map: lavaTexture } );
-	
-	var materialArray = [ lavaMaterial, chromeMaterial ];
-	var textGeom = new THREE.TextGeometry( "hoanganh", 
-	{
-		size: 30, height: 4, curveSegments: 3,
-		font: "helvetiker", weight: "bold", style: "normal",
-		bevelThickness: 2, bevelSize: 1, bevelEnabled: true,
-		material: 0, extrudeMaterial: 1
-	});
-	// font: helvetiker, gentilis, droid sans, droid serif, optimer
-	// weight: normal, bold
-	
-	var textMaterial = new THREE.MeshFaceMaterial(materialArray);
-	var textMesh = new THREE.Mesh(textGeom, textMaterial );
-	
-	textGeom.computeBoundingBox();
-	var textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
-	
-	textMesh.position.set( -100, 20, 100 );
-	textMesh.rotation.x = -Math.PI / 4;
-	scene.add(textMesh);
 
 }
 
