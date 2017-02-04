@@ -14,7 +14,8 @@
 <script src="js/Detector.js"></script>
 <script src="js/Stats.js"></script>
 <script src="js/OrbitControls.js"></script>
-<script src="js/THREEx.KeyboardState.js"></script>
+<!-- <script src="js/THREEx.KeyboardState.js"></script> -->
+<script src="js/KeyboardState.js"></script>
 <script src="js/THREEx.FullScreen.js"></script>
 <script src="js/THREEx.WindowResize.js"></script>
 
@@ -55,17 +56,23 @@ This three.js demo is part of a collection at
 
 // standard global variables
 var container, scene, camera, renderer, controls, stats;
-var keyboard = new THREEx.KeyboardState();
+var keyboard = new KeyboardState();
 var clock = new THREE.Clock();
 // custom global variables
 var cube;
+let userTypingText = '';
 
-let rickCookQuote = 'Programming today is a race between software engineers striving to build bigger and better idiot-proof programs, and the universe trying to build bigger and better idiots. So far, the universe is winning.';
+// window.text = '';
+
+
+let rickCookQuote = 'Programming today is a race between software engineers striving to build bigger and better proof programs, and the universe trying to build bigger and better idiots. So far, the universe is winning.';
 let linuxQuote = 'Talk is cheap. Show me the code.';
 
 let textArr = [];
-textArr = textArr.concat(rickCookQuote.split(' '));
-textArr = textArr.concat(linuxQuote.split(' '));
+// textArr = textArr.concat(rickCookQuote.toLowerCase().split(' '));
+textArr = textArr.concat(linuxQuote.toLowerCase().split(' '));
+
+let showedTextArr = [];
 
 let randomText = (function(){
 	// Font with textures applied:
@@ -81,15 +88,15 @@ let randomText = (function(){
 	
 	var materialArray = [ lavaMaterial, chromeMaterial ];
 
-	
-
 	const x = {max: 200, min: -200};
 	const y = {max: 150, min: 0};
 	const z = {max: 150, min: -20};
 
 	return {
 		create: function(){
-			var textGeom = new THREE.TextGeometry( textArr[Math.floor(Math.random() * textArr.length)], 
+			let text = textArr[Math.floor(Math.random() * textArr.length)];
+			// showedTextArr.push(text);
+			var textGeom = new THREE.TextGeometry( text, 
 			{
 				size: 14, height: 4, curveSegments: 3,
 				font: "helvetiker", weight: "bold", style: "normal",
@@ -101,6 +108,11 @@ let randomText = (function(){
 			
 			var textMaterial = new THREE.MeshFaceMaterial(materialArray);
 			var textMesh = new THREE.Mesh(textGeom, textMaterial );
+
+			showedTextArr.push({
+				text,
+				textMesh
+			});
 			
 			// textGeom.computeBoundingBox();
 			// var textWidth = textGeom.boundingBox.max.x - textGeom.boundingBox.min.x;
@@ -129,8 +141,14 @@ let randomText = (function(){
 		}
 	}
 })();
+let start = Date.now();
+let end;
+const gamePlayTime = 30 * 1000; //30s
+let point = 0;
+let endGame = false;
 
 init();
+
 animate();
 
 
@@ -158,7 +176,7 @@ function init()
 	container.appendChild( renderer.domElement );
 	// EVENTS
 	THREEx.WindowResize(renderer, camera);
-	THREEx.FullScreen.bindKey({ charCode : 'm'.charCodeAt(0) });
+	// THREEx.FullScreen.bindKey({ charCode : ''.charCodeAt(0) });
 	// CONTROLS
 	controls = new THREE.OrbitControls( camera, renderer.domElement );
 	// STATS
@@ -191,41 +209,42 @@ function init()
 	////////////
 	// CUSTOM //
 	////////////
-
-	
+	let autoCreateText = setInterval(function(){
+		randomText.create();
+		if(endGame){
+			clearInterval(autoCreateText);
+		}
+	}, 2000);
 
 }
-
 function animate() 
 {
     requestAnimationFrame( animate );
-	render();
 	update();
-	if ( window.text == 'hoanganh' ) 
-	{ 
-		console.log('typing right');
-		console.log(text);
-		text = '';
-
-		// update(true);
-		// console.log(textMesh);
-		createText();
-	}else{
-		// update();
-	}
-}
-window.text = '';
-
-window.addEventListener('keydown', function(event){
-	// console.log(event);
-	if(event.key && event.key != 'Enter')
-		text += event.key;
-
-	// if(event.key && event.key == 'Enter'){
+	render();
+	// if ( text == 'hoanganh' ) 
+	// { 
+	// 	console.log('typing right');
 	// 	console.log(text);
 	// 	text = '';
+
+	// 	// update(true);
+	// 	// console.log(textMesh);
+	// 	// createText();
+	// }else{
+	// 	// update();
 	// }
-});
+	
+
+	end = Date.now();
+	if(end - start > gamePlayTime || point > 100){
+		console.log('end game');
+		createText();
+		render();
+		animate = function(){};//dump function to stop infinite loop
+		endGame = true;
+	}
+}
 
 function update(isCreateText = false)
 {
@@ -233,8 +252,22 @@ function update(isCreateText = false)
 	// { 
 	// 	console.log('typing right');
 	// }
-	if(isCreateText){
-		createText();
+	// if(isCreateText){
+	// 	createText();
+	// }
+	// keyboard.update();
+	keyboard.update();
+	if(keyboard.down('enter')){
+		let matchTextMesh = showedTextArr.forEach((t) => {
+			if(t.text == userTypingText){
+				t.text = '\u221E';
+				// t.textMesh.position.y += -500;
+				scene.remove(t.textMesh);
+				point++;
+			}
+		});
+
+		userTypingText = '';
 	}
 	
 	controls.update();
@@ -243,6 +276,9 @@ function update(isCreateText = false)
 
 function render() 
 {
+	// if(!THREEx.FullScreen.activated()){
+	// 	THREEx.FullScreen.request(renderer.domElement);
+	// }
 	renderer.render( scene, camera );
 }
 
@@ -259,7 +295,7 @@ function createText(){
 	var lavaMaterial = new THREE.MeshBasicMaterial( { map: lavaTexture } );
 	
 	var materialArray = [ lavaMaterial, chromeMaterial ];
-	var textGeom = new THREE.TextGeometry( "congratulation!", 
+	var textGeom = new THREE.TextGeometry( `Congratulation! Your point: ${point}`, 
 	{
 		size: 14, height: 4, curveSegments: 3,
 		font: "helvetiker", weight: "bold", style: "normal",
@@ -279,6 +315,17 @@ function createText(){
 	// textMesh.rotation.x = -Math.PI / 8;
 	scene.add(textMesh);
 }
+window.addEventListener('keydown', function(event){
+	// console.log(event);
+	if(event.key && event.key != 'Enter')
+		userTypingText += event.key;
+
+	if(event.key && event.key == 'Enter'){
+		console.log(userTypingText);	
+		// window.pressEnter = true;
+	}
+	
+});
 </script>
 
 </body>
